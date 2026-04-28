@@ -14,7 +14,7 @@ import os
 from google import genai
 from google.genai import types
 
-from llm_utils import _extract_text
+from llm_utils import _extract_text, _call_with_retry
 
 MODEL = os.environ.get("GEMINI_CHAT_MODEL", "gemini-2.5-flash-lite")
 
@@ -46,13 +46,15 @@ def baseline_answer(question: str) -> str:
         f"Question: {question}"
     )
 
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            temperature=0.3,
-            max_output_tokens=1024,
-            thinking_config=types.ThinkingConfig(thinking_budget=0),
-        ),
+    response = _call_with_retry(
+        lambda: client.models.generate_content(
+            model=MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.3,
+                max_output_tokens=1024,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
+            ),
+        )
     )
     return _extract_text(response).strip()

@@ -1,1 +1,134 @@
-system,question,expected_metric,expected_value,metric_key,extracted_values,computed_value,answer,error
+system,question_type,question,expected_metric,expected_value,metric_key,classification_correct,extracted_values,computed_value,numeric_match,answer,error
+metric_aware,canonical,What is Apple's gross margin for FY2025?,gross_margin,46.9052,gross_margin,True,"{'revenue': 416161.0, 'gross_profit': 195201.0}",46.90516410716045,True,"Apple's gross margin for FY2025 is computed at 46.91%. This metric indicates that for every dollar of revenue generated, Apple retains approximately 47 cents after accounting for the direct costs of producing its goods and services. This calculation was derived using the ""Revenue"" and ""Gross Profit"" line items from Apple's 10-K filing. A gross margin in this range is generally considered healthy for a technology company, reflecting strong pricing power and efficient cost management.",
+baseline,canonical,What is Apple's gross margin for FY2025?,gross_margin,46.9052,,,,,,"As a financial analyst assistant, I can help you with information about Apple's financial metrics. However, I need to clarify something important regarding your question.
+
+**Apple's Form 10-K filing for Fiscal Year 2025 has not yet been released.** The Form 10-K is an annual report that companies file with the U.S. Securities and Exchange Commission (SEC) after the end of their fiscal year. Apple's fiscal year typically ends in late September. Therefore, the FY2025 10-K would likely be filed in late October or November of 2025.
+
+Because the FY2025 10-K is not yet available, I cannot provide you with Apple's gross margin for that specific fiscal year.
+
+**To get Apple's gross margin for FY2025, you will need to wait for the official filing of their annual report in late 2025.**
+
+If you are interested in Apple's gross margin for a **past fiscal year** (e.g., FY2023 or FY2024), I would be happy to look that up for you from their most recent filings.",
+metric_aware,canonical,What was Apple's operating margin in fiscal year 2025?,operating_margin,31.9708,operating_margin,True,"{'operating_income': 133050.0, 'revenue': 416161.0}",31.970799762591884,True,"Apple's operating margin for fiscal year 2025 was 31.97%. This metric indicates that for every dollar of revenue generated, Apple retained approximately 32 cents after accounting for its core operating expenses. This was calculated using operating income of $133,050 million and revenue of $416,161 million, both found on their 10-K filing. This is a strong operating margin, demonstrating significant profitability from their core business operations.",
+baseline,canonical,What was Apple's operating margin in fiscal year 2025?,operating_margin,31.9708,,,,,,"As a financial analyst assistant, I can help you with that. However, I need to clarify that **Apple's Form 10-K filing for fiscal year 2025 is not yet available.**
+
+Annual reports, like the Form 10-K, are typically filed with the Securities and Exchange Commission (SEC) several months after the end of a company's fiscal year. Apple's fiscal year ends in late September. Therefore, the FY2025 10-K would likely be filed in late 2025 or early 2026.
+
+**I do not have access to future financial data.**
+
+Once the FY2025 10-K is filed, you will be able to find Apple's operating margin and other key financial metrics within that document. You can typically access these filings on the SEC's EDGAR database or directly from Apple's Investor Relations website.",
+metric_aware,canonical,What is Apple's net profit margin for FY2025?,net_profit_margin,26.9151,net_profit_margin,True,"{'net_income': 112010.0, 'revenue': 416161.0}",26.91506412181824,True,"For Fiscal Year 2025, Apple's net profit margin is calculated at 26.92%. This metric indicates that for every dollar of revenue generated, Apple retained approximately 26.9 cents as profit after all expenses were paid. This was derived by dividing net income of $112,010 million by revenue of $416,161 million. This is a very strong margin, suggesting excellent operational efficiency and pricing power.",
+baseline,canonical,What is Apple's net profit margin for FY2025?,net_profit_margin,26.9151,,,,,,"As a financial analyst assistant, I can tell you that Apple's FY2025 Form 10-K filing is not yet available. Annual reports, like the 10-K, are typically filed with the Securities and Exchange Commission (SEC) several months after the end of a company's fiscal year.
+
+Therefore, I do not have access to Apple's FY2025 net profit margin at this time.
+
+To find this information once it becomes available, you would need to:
+
+1.  **Wait for Apple to file its FY2025 Form 10-K.** This will likely be sometime in late 2025 or early 2026.
+2.  **Access the filing on the SEC's EDGAR database** or through Apple's investor relations website.
+3.  **Locate the Consolidated Statements of Operations** within the 10-K.
+4.  **Calculate the net profit margin** by dividing the Net Income by the Net Sales (or Revenue) for FY2025 and multiplying by 100.
+
+I apologize that I cannot provide the specific number you are looking for at this moment.",
+metric_aware,canonical,What is Apple's current ratio?,current_ratio,0.8933,current_ratio,True,"{'current_assets': 147957.0, 'current_liabilities': 165631.0}",0.8932929222186667,True,"Apple's current ratio is 0.89x. This indicates that for every dollar of short-term liabilities, Apple has $0.89 in current assets to cover it. We calculated this using the ""current assets"" and ""current liabilities"" line items from their 10-K filing. While a ratio below 1x can sometimes signal liquidity concerns, it's important to note that many large, established companies operate with ratios below 1x due to efficient working capital management.",
+baseline,canonical,What is Apple's current ratio?,current_ratio,0.8933,,,,,,"As a financial analyst assistant, I can help you understand Apple's financial metrics. However, I need to clarify something important regarding your question.
+
+You're asking about Apple's FY2025 financial metrics from the annual Form 10-K filing. **The Form 10-K for fiscal year 2025 has not yet been filed by Apple.** Companies typically file their 10-K reports several months after their fiscal year-end. Apple's fiscal year ends in September. Therefore, the FY2025 10-K would likely be filed in late 2025 or early 2026.
+
+**To answer your question about Apple's current ratio, I would need to refer to their most recently filed 10-K report.** This would be for **Fiscal Year 2023**, which ended on September 30, 2023.
+
+**Based on Apple's Form 10-K for the fiscal year ended September 30, 2023, their current ratio was approximately 0.95.**
+
+The current ratio is calculated by dividing a company's current assets by its current liabilities. It's a liquidity ratio that measures a company's ability to pay off its short-term liabilities with its short-term assets.
+
+If you'd like to know the current ratio for a different fiscal year, please specify which one, and I can try to find that information for you.",
+metric_aware,canonical,How much did Apple's R&D expenses grow year over year in FY2025?,rd_growth,10.1371,rd_growth,True,"{'rd_current': 34550.0, 'rd_prior': 31370.0}",10.137073637233025,True,"Apple's R&D expenses grew by **10.14%** year-over-year in FY2025. This metric indicates a significant investment in innovation and future product development, which is generally positive for long-term growth. This calculation was derived from the R&D expense line items in Apple's 10-K filings for the current and prior fiscal years. A double-digit increase like this suggests Apple is prioritizing its pipeline, which is a healthy sign for a technology company.",
+baseline,canonical,How much did Apple's R&D expenses grow year over year in FY2025?,rd_growth,10.1371,,,,,,"As a financial analyst assistant, I can help you with this question. However, there's a crucial point to understand: **Apple's Form 10-K filing for Fiscal Year 2025 has not yet been released.**
+
+Annual reports, like the 10-K, are typically filed with the Securities and Exchange Commission (SEC) several months after the fiscal year ends. Apple's fiscal year ends in September. Therefore, the FY2025 10-K would likely be filed around late November or December of 2025.
+
+**Because the FY2025 10-K is not yet available, I cannot provide you with the specific R&D expense growth figure for that year.**
+
+To answer your question about R&D expense growth, I would need to compare the R&D expenses reported in the FY2025 10-K with the R&D expenses reported in the FY2024 10-K.
+
+**If you are interested in recent R&D expense growth, I can provide you with the figures for FY2023 and FY2024, as those filings are available.** Please let me know if you would like that information.",
+metric_aware,variation,What percentage of Apple's revenue was retained as gross profit in FY2025?,gross_margin,46.9052,gross_margin,True,"{'revenue': 416161.0, 'gross_profit': 195201.0}",46.90516410716045,True,"In FY2025, Apple retained **46.91%** of its revenue as gross profit. This Gross Margin indicates the profitability of Apple's core operations after accounting for the direct costs of producing its goods and services. This figure was calculated using Apple's reported revenue and gross profit from its 10-K filing. A gross margin of nearly 47% is generally considered very healthy for a company of Apple's scale and industry.",
+baseline,variation,What percentage of Apple's revenue was retained as gross profit in FY2025?,gross_margin,46.9052,,,,,,"As a financial analyst assistant, I can help you understand Apple's financial performance. However, I need to clarify something important regarding your question.
+
+**Apple's fiscal year (FY) 2025 has not yet concluded.** The annual Form 10-K filing for FY2025 will not be available until after the fiscal year ends and the company completes its financial reporting and auditing processes. Typically, this filing is made several months after the fiscal year-end.
+
+Therefore, **I cannot provide you with the specific percentage of Apple's revenue retained as gross profit for FY2025 at this time.**
+
+To give you an idea of what this metric looks like, I can provide you with the data for the most recently completed fiscal year for which the 10-K is available. For example, if you are interested in FY2023, I could look up that information for you.
+
+Please let me know if you would like me to provide the gross profit margin for a past fiscal year.",
+metric_aware,variation,How efficiently did Apple convert revenue into net income in FY2025?,net_profit_margin,26.9151,net_profit_margin,True,"{'net_income': 112010.0, 'revenue': 416161.0}",26.91506412181824,True,"In FY2025, Apple's Net Profit Margin was 26.92%. This metric indicates that for every dollar of revenue generated, Apple retained approximately 26.92 cents as net income, reflecting strong operational efficiency. This calculation was derived using the ""Net Income"" and ""Revenue"" line items from Apple's 10-K filing. A margin of nearly 27% is generally considered very healthy for a company of Apple's scale and industry.",
+baseline,variation,How efficiently did Apple convert revenue into net income in FY2025?,net_profit_margin,26.9151,,,,,,"As a financial analyst assistant, I can help you understand Apple's efficiency in converting revenue into net income. However, there's a crucial point to address first:
+
+**Apple's Form 10-K filing for Fiscal Year 2025 has not yet been released.**
+
+Annual 10-K reports are typically filed with the U.S. Securities and Exchange Commission (SEC) several months after the end of the company's fiscal year. Apple's fiscal year ends in September. Therefore, the FY2025 10-K would likely be filed around late November or December of 2025.
+
+**Therefore, I cannot provide you with specific numbers for Apple's FY2025 net income or revenue from their 10-K filing at this time.**
+
+**How to measure efficiency (and what to look for in the future):**
+
+The metric you're asking about is commonly referred to as **Net Profit Margin**. This is calculated as:
+
+**Net Profit Margin = (Net Income / Revenue) * 100%**
+
+A higher net profit margin indicates that a company is more efficient at converting its revenue into profit.
+
+**What to do when the FY2025 10-K is available:**
+
+Once Apple releases its FY2025 Form 10-K, you will be able to find the following information on the filing:
+
+*   **Revenue:** This will be listed in the Consolidated Statements of Operations (also known as the Income Statement).
+*   **Net Income:** This will also be found in the Consolidated Statements of Operations.
+
+You can then perform the calculation above to determine Apple's net profit margin for FY2025.
+
+**Where to find the filing:**
+
+When it's available, you can access Apple's Form 10-K filing on:
+
+*   **The SEC's EDGAR database:** This is the official repository for all SEC filings.
+*   **Apple's Investor Relations website:** Companies typically make their SEC filings available on their own websites as well.
+
+I apologize that I cannot provide the specific numbers you're looking for right now. Please check back later in 2025 for the FY2025 10-K filing.",
+metric_aware,edge_case,Is Apple's current ratio above 1.0 — can it cover all short-term obligations?,current_ratio,0.8933,current_ratio,True,"{'current_assets': 147957.0, 'current_liabilities': 165631.0}",0.8932929222186667,True,"Apple's current ratio is 0.89x. This means that for every dollar of short-term debt, Apple has $0.89 in current assets to cover it. This figure was calculated using current assets of $147,957 million and current liabilities of $165,631 million, as reported in their 10-K. While a ratio below 1.0 suggests potential liquidity challenges, it's worth noting that Apple's business model often involves strong cash flow generation, which can mitigate this.",
+baseline,edge_case,Is Apple's current ratio above 1.0 — can it cover all short-term obligations?,current_ratio,0.8933,,,,,,"As a financial analyst assistant, I can help you understand Apple's financial health. However, I need to clarify a point regarding your question.
+
+You're asking about Apple's FY2025 financial metrics from the annual Form 10-K filing. **The Form 10-K filing for Fiscal Year 2025 has not yet been released.** Companies typically file their 10-K reports several months after the end of their fiscal year. Apple's fiscal year ends in September. Therefore, the FY2025 10-K would likely be filed around late October or November of 2025.
+
+**To answer your question about the current ratio and Apple's ability to cover short-term obligations, I would need to refer to the most recently filed 10-K, which would be for Fiscal Year 2023.**
+
+**Based on Apple's Form 10-K for the fiscal year ended September 30, 2023:**
+
+*   **Current Ratio:** Apple's current ratio was **1.04**.
+
+**Interpretation:**
+
+A current ratio of 1.04 means that Apple had $1.04 in current assets for every $1.00 in current liabilities at the end of FY2023.
+
+**Therefore, based on the FY2023 data, Apple's current ratio was above 1.0, indicating that it could cover its short-term obligations.**
+
+Please note that this is based on historical data. The FY2025 figures will only be available once the report is filed.",
+metric_aware,unsupported,What is Apple's total revenue for FY2025?,,N/A,,True,,,,,
+baseline,unsupported,What is Apple's total revenue for FY2025?,,N/A,,,,,,"As a financial analyst assistant, I can help you with that. However, I need to clarify that **Apple's Form 10-K filing for Fiscal Year 2025 has not yet been released.**
+
+Annual 10-K filings are typically released several months after the end of the fiscal year. Apple's fiscal year ends in late September. Therefore, the FY2025 10-K would likely be filed around late November or December of 2025.
+
+**Therefore, I cannot provide you with Apple's total revenue for FY2025 at this time.**
+
+If you are interested in Apple's most recent reported financial data, I can provide you with their total revenue for FY2023, which is the most recently completed fiscal year for which a 10-K filing is available. Please let me know if you would like that information.",
+metric_aware,unsupported,What is Apple's earnings per share for FY2025?,,N/A,,True,,,,,
+baseline,unsupported,What is Apple's earnings per share for FY2025?,,N/A,,,,,,"As a financial analyst assistant, I can help you with information about Apple's financial metrics. However, I need to clarify something regarding your question.
+
+Apple's fiscal year (FY) ends in September. This means that **FY2025 has not yet concluded.** Therefore, the annual Form 10-K filing for FY2025 will not be available until after the fiscal year ends and the report is compiled and filed with the SEC.
+
+**I do not have access to Apple's FY2025 earnings per share (EPS) because that data is not yet publicly available.**
+
+Typically, Apple files its Form 10-K for a given fiscal year in late October or early November of the following calendar year. So, the FY2025 10-K would likely be filed around October/November 2025.
+
+If you are interested in Apple's **most recently completed fiscal year**, which would be **FY2023**, I can provide you with that information if it's available in my knowledge base. Please let me know if you'd like to know about FY2023 EPS.",

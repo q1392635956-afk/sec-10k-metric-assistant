@@ -11,11 +11,59 @@ The actual math lives in metric_engine.py, not here.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import os
+import time
 
 from google import genai
 from google.genai import types
+
+# Per-call timeout and backoff schedule for Gemini API calls.
+API_TIMEOUT_SECONDS = 90
+RETRY_DELAYS = [2, 4, 8]
+
+
+def _is_retryable_error(exc: Exception) -> bool:
+    retryable_keywords = (
+        "503", "429", "unavailable", "resource_exhausted",
+        "rate limit", "rate_limit", "timeout", "timed out",
+        "connection", "temporarily", "overloaded", "network",
+    )
+    err_str = str(exc).lower()
+    return (
+        any(kw in err_str for kw in retryable_keywords)
+        or isinstance(exc, (ConnectionError, TimeoutError, OSError))
+    )
+
+
+def _call_with_retry(fn):
+    """Call fn() with timeout and exponential-backoff retry.
+
+    fn must be a zero-argument callable that makes one Gemini API call.
+    Raises the last exception after all retries are exhausted.
+    """
+    last_exc: Exception | None = None
+    for attempt in range(len(RETRY_DELAYS) + 1):
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(fn)
+        executor.shutdown(wait=False)
+        try:
+            return future.result(timeout=API_TIMEOUT_SECONDS)
+        except concurrent.futures.TimeoutError:
+            last_exc = TimeoutError(
+                f"Gemini API call timed out after {API_TIMEOUT_SECONDS}s"
+            )
+        except Exception as exc:
+            last_exc = exc
+        if attempt == len(RETRY_DELAYS) or not _is_retryable_error(last_exc):
+            raise last_exc
+        wait = RETRY_DELAYS[attempt]
+        print(f"  [retry {attempt + 1}/{len(RETRY_DELAYS)}] "
+              f"{type(last_exc).__name__}: {str(last_exc)[:80]}")
+        print(f"  Retrying in {wait}s...")
+        time.sleep(wait)
+    raise last_exc
 
 MODEL = os.environ.get("GEMINI_CHAT_MODEL", "gemini-2.5-flash-lite")
 
@@ -106,17 +154,19 @@ def classify_metric(question: str) -> str | None:
         "Answer:"
     )
 
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            temperature=0,
-            max_output_tokens=50,
-            # Disable thinking for this simple classification task.
-            # gemini-2.5-flash uses thinking tokens by default; without this,
-            # thinking can exhaust the token budget before any text is emitted.
-            thinking_config=types.ThinkingConfig(thinking_budget=0),
-        ),
+    response = _call_with_retry(
+        lambda: client.models.generate_content(
+            model=MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0,
+                max_output_tokens=50,
+                # Disable thinking for this simple classification task.
+                # gemini-2.5-flash uses thinking tokens by default; without this,
+                # thinking can exhaust the token budget before any text is emitted.
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
+            ),
+        )
     )
 
     raw = _extract_text(response).strip().lower()
@@ -185,15 +235,17 @@ def extract_values(
         f"{evidence_text}"
     )
 
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            temperature=0,
-            max_output_tokens=512,
-            thinking_config=types.ThinkingConfig(thinking_budget=0),
-        ),
+    response = _call_with_retry(
+        lambda: client.models.generate_content(
+            model=MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0,
+                max_output_tokens=512,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
+            ),
+        )
     )
 
     try:
@@ -238,13 +290,15 @@ def format_answer(
         "Be professional and concise. Do not invent numbers beyond what is provided above."
     )
 
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            temperature=0.3,
-            max_output_tokens=1024,
-            thinking_config=types.ThinkingConfig(thinking_budget=0),
-        ),
+    response = _call_with_retry(
+        lambda: client.models.generate_content(
+            model=MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.3,
+                max_output_tokens=1024,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
+            ),
+        )
     )
     return _extract_text(response).strip()
