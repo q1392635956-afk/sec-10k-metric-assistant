@@ -1,0 +1,11 @@
+question,expected_metric,expected_value
+What is Apple's gross margin for FY2025?,gross_margin,~46%
+What was Apple's gross profit percentage in fiscal year 2025?,gross_margin,~46%
+What is Apple's operating margin for FY2025?,operating_margin,~30%
+What was Apple's operating income as a percentage of revenue in FY2025?,operating_margin,~30%
+What is Apple's net profit margin for FY2025?,net_profit_margin,~24%
+What percentage of revenue did Apple keep as net income in FY2025?,net_profit_margin,~24%
+What is Apple's current ratio at the end of FY2025?,current_ratio,~0.87
+How does Apple's ability to pay short-term obligations look in FY2025?,current_ratio,~0.87
+How much did Apple's R&D spending grow year over year in FY2025?,rd_growth,~5%
+What was the year-over-year change in Apple's research and development expenses for FY2025?,rd_growth,~5%

@@ -1,0 +1,37 @@
+{
+  "gross_margin": {
+    "name": "Gross Margin",
+    "formula": "(gross_profit / revenue) * 100",
+    "required_fields": ["gross_profit", "revenue"],
+    "unit": "%",
+    "description": "Percentage of revenue remaining after cost of goods sold"
+  },
+  "operating_margin": {
+    "name": "Operating Margin",
+    "formula": "(operating_income / revenue) * 100",
+    "required_fields": ["operating_income", "revenue"],
+    "unit": "%",
+    "description": "Percentage of revenue remaining after all operating expenses"
+  },
+  "net_profit_margin": {
+    "name": "Net Profit Margin",
+    "formula": "(net_income / revenue) * 100",
+    "required_fields": ["net_income", "revenue"],
+    "unit": "%",
+    "description": "Percentage of revenue that becomes net income after all expenses and taxes"
+  },
+  "current_ratio": {
+    "name": "Current Ratio",
+    "formula": "current_assets / current_liabilities",
+    "required_fields": ["current_assets", "current_liabilities"],
+    "unit": "x",
+    "description": "Ability to pay short-term obligations; current assets divided by current liabilities"
+  },
+  "rd_growth": {
+    "name": "R&D Expense YoY Growth",
+    "formula": "((rd_current - rd_prior) / rd_prior) * 100",
+    "required_fields": ["rd_current", "rd_prior"],
+    "unit": "%",
+    "description": "Year-over-year percentage change in research and development expenses"
+  }
+}
