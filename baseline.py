@@ -14,7 +14,9 @@ import os
 from google import genai
 from google.genai import types
 
-MODEL = os.environ.get("GEMINI_CHAT_MODEL", "gemini-2.5-flash")
+from llm_utils import _extract_text
+
+MODEL = os.environ.get("GEMINI_CHAT_MODEL", "gemini-2.5-flash-lite")
 
 
 def _get_client() -> genai.Client:
@@ -49,7 +51,8 @@ def baseline_answer(question: str) -> str:
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=0.3,
-            max_output_tokens=400,
+            max_output_tokens=1024,
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
         ),
     )
-    return response.text.strip()
+    return _extract_text(response).strip()

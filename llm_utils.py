@@ -17,7 +17,7 @@ import os
 from google import genai
 from google.genai import types
 
-MODEL = os.environ.get("GEMINI_CHAT_MODEL", "gemini-2.5-flash")
+MODEL = os.environ.get("GEMINI_CHAT_MODEL", "gemini-2.5-flash-lite")
 
 SUPPORTED_METRICS = [
     "gross_margin",
@@ -38,6 +38,43 @@ def _get_client() -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
+def _extract_text(response) -> str:
+    """Safely extract text from a Gemini GenerateContentResponse.
+
+    Tries response.text first. If that is None (e.g. safety filter triggered,
+    finish_reason != STOP), falls back to reading candidates[0].content.parts
+    directly. Raises a clear ValueError if no usable text is found anywhere.
+    """
+    # Fast path: the SDK shortcut works for the vast majority of responses
+    if response.text is not None:
+        return response.text
+
+    # Slow path: inspect candidates and parts manually
+    try:
+        for candidate in response.candidates or []:
+            parts = getattr(getattr(candidate, "content", None), "parts", None) or []
+            assembled = "".join(
+                p.text for p in parts if getattr(p, "text", None)
+            )
+            if assembled:
+                return assembled
+    except Exception:
+        pass
+
+    # Build a useful error message that includes the finish reason
+    finish_reason = "unknown"
+    try:
+        finish_reason = str(response.candidates[0].finish_reason)
+    except Exception:
+        pass
+
+    raise ValueError(
+        f"Gemini returned no text content (finish_reason={finish_reason}). "
+        "Possible causes: safety filter triggered, response blocked, or empty output. "
+        "Check your GEMINI_API_KEY, try a different question, or increase max_output_tokens."
+    )
+
+
 # ---------------------------------------------------------------------------
 # 1. Metric classification
 # ---------------------------------------------------------------------------
@@ -46,20 +83,27 @@ def classify_metric(question: str) -> str | None:
     """Map a free-text question to one of the supported metric keys.
 
     Returns the key string (e.g. 'gross_margin') or None if no match.
+    Never raises on a None response — returns None instead.
     """
     client = _get_client()
 
+    valid_keys = ", ".join(SUPPORTED_METRICS)
+
     prompt = (
-        "You are a financial analyst assistant. Classify the following question "
-        "into exactly one of these metric categories:\n\n"
-        "- gross_margin: gross margin or gross profit percentage\n"
-        "- operating_margin: operating margin or operating income percentage\n"
-        "- net_profit_margin: net profit margin or net income percentage\n"
-        "- current_ratio: current ratio or short-term liquidity\n"
-        "- rd_growth: R&D expense growth or research and development spending change\n\n"
-        "If the question does not fit any category, respond with 'none'.\n\n"
-        "Respond with ONLY the metric key or 'none'. No explanation, no punctuation.\n\n"
-        f"Question: {question}"
+        "You are a financial analyst assistant. Classify the question below into "
+        "exactly one of these metric keys:\n\n"
+        "  gross_margin        — gross margin or gross profit percentage\n"
+        "  operating_margin    — operating margin or operating income percentage\n"
+        "  net_profit_margin   — net profit margin or net income percentage\n"
+        "  current_ratio       — current ratio or short-term liquidity\n"
+        "  rd_growth           — R&D expense growth or R&D spending year-over-year change\n"
+        "  unknown             — does not match any of the above\n\n"
+        f"Valid outputs: {valid_keys}, unknown\n\n"
+        "Rules:\n"
+        "- Output ONLY the metric key — one word, no punctuation, no explanation.\n"
+        "- You must choose from the valid outputs list above.\n\n"
+        f"Question: {question}\n"
+        "Answer:"
     )
 
     response = client.models.generate_content(
@@ -67,11 +111,28 @@ def classify_metric(question: str) -> str | None:
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=0,
-            max_output_tokens=20,
+            max_output_tokens=50,
+            # Disable thinking for this simple classification task.
+            # gemini-2.5-flash uses thinking tokens by default; without this,
+            # thinking can exhaust the token budget before any text is emitted.
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
         ),
     )
-    result = response.text.strip().lower()
-    return result if result in SUPPORTED_METRICS else None
+
+    raw = _extract_text(response).strip().lower()
+
+    # Exact match first
+    if raw in SUPPORTED_METRICS:
+        return raw
+    if "unknown" in raw:
+        return None
+
+    # Fallback: model returned extra words — scan for the first valid key
+    for key in SUPPORTED_METRICS:
+        if key in raw:
+            return key
+
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -86,14 +147,13 @@ def extract_values(
     """Extract required numeric values from retrieved evidence chunks.
 
     Returns a dict mapping each required field name to a float (or None).
-    Values are expected in millions of USD unless noted otherwise.
+    Values are in millions of USD unless noted otherwise.
     """
     client = _get_client()
 
     evidence_text = "\n\n---\n\n".join(evidence_chunks)
     fields_list = ", ".join(required_fields)
 
-    # Field-specific hints so the model knows what to look for
     field_hints = {
         "revenue": "Total net sales for FY2025 (fiscal year ended September 27, 2025)",
         "gross_profit": "Gross margin dollar amount for FY2025",
@@ -118,7 +178,7 @@ def extract_values(
         "- All values are in millions of USD (e.g. 391035.0 for $391,035 million).\n"
         "- Return numbers only — no units, commas, or dollar signs.\n"
         "- If a value cannot be found in the evidence, use null.\n"
-        "- Use the most recent fiscal year (FY2025) values unless the field says 'prior'.\n\n"
+        "- Use FY2025 values unless the field description says 'prior' or 'FY2024'.\n\n"
         "Return ONLY a valid JSON object with the required field names as keys.\n"
         'Example: {"revenue": 391035.0, "gross_profit": 180683.0}\n\n'
         "Evidence from the 10-K:\n"
@@ -131,13 +191,15 @@ def extract_values(
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
             temperature=0,
+            max_output_tokens=512,
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
         ),
     )
 
     try:
-        return json.loads(response.text)
-    except (json.JSONDecodeError, AttributeError):
-        # Return all nulls so the caller can surface a clean error
+        raw = _extract_text(response)
+        return json.loads(raw)
+    except (ValueError, json.JSONDecodeError):
         return {f: None for f in required_fields}
 
 
@@ -181,7 +243,8 @@ def format_answer(
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=0.3,
-            max_output_tokens=400,
+            max_output_tokens=1024,
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
         ),
     )
-    return response.text.strip()
+    return _extract_text(response).strip()
