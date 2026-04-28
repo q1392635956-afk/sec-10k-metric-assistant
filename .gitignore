@@ -9,8 +9,5 @@ venv/
 .DS_Store
 .streamlit/secrets.toml
 
-# 10-K source file (public doc but large; obtain via data/README.md)
-data/apple_2025_10k.txt
-
 # TF-IDF index cache (regenerates automatically on first run)
 data/tfidf_cache.pkl
