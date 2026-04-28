@@ -1,11 +1,11 @@
 """
 retriever.py
 ------------
-Embed 10-K chunks using OpenAI text-embedding-3-small, cache them locally,
-and retrieve the top-k most relevant chunks for a query using cosine similarity.
+Local TF-IDF retrieval over 10-K text chunks using scikit-learn.
 
-The embedding index is built once and saved to data/embeddings_cache.pkl.
-Subsequent calls load from cache, which avoids repeated API calls.
+No external API calls — runs entirely on-device.
+The TF-IDF index is built once from the chunked text, cached to disk,
+and reloaded on subsequent runs.
 """
 from __future__ import annotations
 
@@ -13,76 +13,57 @@ import os
 import pickle
 
 import numpy as np
-from openai import OpenAI
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 from ingest import load_chunks
 
-CACHE_PATH = "data/embeddings_cache.pkl"
-EMBED_MODEL = "text-embedding-3-small"
-
-
-def _get_client() -> OpenAI:
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "OPENAI_API_KEY environment variable is not set. "
-            "Copy .env.example to .env and add your key."
-        )
-    return OpenAI(api_key=api_key)
-
-
-def _embed(text: str) -> list[float]:
-    """Return embedding vector for a single string."""
-    client = _get_client()
-    response = client.embeddings.create(model=EMBED_MODEL, input=text)
-    return response.data[0].embedding
+CACHE_PATH = "data/tfidf_cache.pkl"
 
 
 def build_or_load_index(
     data_path: str = "data/apple_2025_10k.txt",
-) -> tuple[list[str], np.ndarray]:
-    """Return (chunks, embeddings_matrix).
+) -> tuple[list[str], TfidfVectorizer, np.ndarray]:
+    """Return (chunks, vectorizer, tfidf_matrix).
 
-    Loads from cache if available; otherwise embeds all chunks and saves cache.
+    Loads from cache if available; otherwise builds the index and saves it.
+    TF-IDF on ~55 KB of text is fast (< 1 second), but caching avoids
+    repeated disk reads on every Streamlit rerun.
     """
     if os.path.exists(CACHE_PATH):
-        print("[retriever] Loading embeddings from cache...")
+        print("[retriever] Loading TF-IDF index from cache...")
         with open(CACHE_PATH, "rb") as f:
             cache = pickle.load(f)
-        return cache["chunks"], cache["embeddings"]
+        return cache["chunks"], cache["vectorizer"], cache["matrix"]
 
-    print("[retriever] Building embeddings index (this may take a minute)...")
+    print("[retriever] Building TF-IDF index...")
     chunks = load_chunks(data_path)
 
-    embeddings: list[list[float]] = []
-    for i, chunk in enumerate(chunks):
-        embeddings.append(_embed(chunk))
-        if (i + 1) % 50 == 0:
-            print(f"[retriever]   {i + 1}/{len(chunks)} chunks embedded...")
-
-    embeddings_array = np.array(embeddings, dtype=np.float32)
+    # Unigrams + bigrams; sublinear TF dampens the effect of very frequent terms
+    vectorizer = TfidfVectorizer(
+        ngram_range=(1, 2),
+        max_features=20_000,
+        sublinear_tf=True,
+    )
+    matrix = vectorizer.fit_transform(chunks)
 
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     with open(CACHE_PATH, "wb") as f:
-        pickle.dump({"chunks": chunks, "embeddings": embeddings_array}, f)
-    print(f"[retriever] Saved cache to '{CACHE_PATH}'")
+        pickle.dump({"chunks": chunks, "vectorizer": vectorizer, "matrix": matrix}, f)
+    print(f"[retriever] Saved TF-IDF cache to '{CACHE_PATH}'")
 
-    return chunks, embeddings_array
+    return chunks, vectorizer, matrix
 
 
 def retrieve(
     query: str,
     chunks: list[str],
-    embeddings: np.ndarray,
+    vectorizer: TfidfVectorizer,
+    matrix,
     top_k: int = 6,
 ) -> list[str]:
-    """Return the top_k chunks most similar to query."""
-    query_vec = np.array(_embed(query), dtype=np.float32)
-
-    # Cosine similarity: (query · chunk) / (|query| * |chunk|)
-    norms = np.linalg.norm(embeddings, axis=1) + 1e-10
-    query_norm = np.linalg.norm(query_vec) + 1e-10
-    scores = (embeddings @ query_vec) / (norms * query_norm)
-
+    """Return the top_k chunks most similar to the query by TF-IDF cosine similarity."""
+    query_vec = vectorizer.transform([query])
+    scores = cosine_similarity(query_vec, matrix).flatten()
     top_indices = np.argsort(scores)[::-1][:top_k]
     return [chunks[i] for i in top_indices]

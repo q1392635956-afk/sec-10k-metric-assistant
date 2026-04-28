@@ -2,19 +2,21 @@
 ingest.py
 ---------
 Load the Apple FY2025 10-K text file and split it into overlapping chunks
-that can be embedded and retrieved.
+for TF-IDF retrieval.
 
-Token-based chunking (via tiktoken) keeps chunks within the embedding
-model's context window and preserves whole words at boundaries.
+Uses character-based chunking with newline-aware boundaries so financial
+table rows are not split in the middle.
 """
 from __future__ import annotations
 
 import os
-import tiktoken
 
 DATA_PATH = "data/apple_2025_10k.txt"
-CHUNK_SIZE = 800   # tokens per chunk — large enough to capture a full table row
-CHUNK_OVERLAP = 100  # overlap so split sentences are still retrievable
+
+# ~1500 characters ≈ 375 tokens — keeps each financial statement table
+# in its own chunk so TF-IDF retrieval scores stay focused
+CHUNK_SIZE_CHARS = 1500
+CHUNK_OVERLAP_CHARS = 150
 
 
 def load_text(path: str = DATA_PATH) -> str:
@@ -30,25 +32,30 @@ def load_text(path: str = DATA_PATH) -> str:
 
 def chunk_text(
     text: str,
-    chunk_size: int = CHUNK_SIZE,
-    overlap: int = CHUNK_OVERLAP,
+    chunk_size: int = CHUNK_SIZE_CHARS,
+    overlap: int = CHUNK_OVERLAP_CHARS,
 ) -> list[str]:
-    """Split text into overlapping token-based chunks.
+    """Split text into overlapping character-based chunks.
 
-    Returns a list of decoded string chunks.
+    Tries to break at a newline near the chunk boundary so financial
+    table rows stay intact within a single chunk.
     """
-    enc = tiktoken.get_encoding("cl100k_base")
-    tokens = enc.encode(text)
     chunks: list[str] = []
     start = 0
 
-    while start < len(tokens):
-        end = min(start + chunk_size, len(tokens))
-        decoded = enc.decode(tokens[start:end])
-        chunks.append(decoded)
-        if end == len(tokens):
+    while start < len(text):
+        end = min(start + chunk_size, len(text))
+
+        # Break cleanly at a newline in the second half of the chunk
+        if end < len(text):
+            newline = text.rfind("\n", start + chunk_size // 2, end)
+            if newline != -1:
+                end = newline + 1  # include the newline itself
+
+        chunks.append(text[start:end])
+        if end >= len(text):
             break
-        start += chunk_size - overlap
+        start = end - overlap
 
     return chunks
 

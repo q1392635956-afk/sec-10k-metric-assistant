@@ -37,7 +37,7 @@ RATE_LIMIT_SLEEP = 2  # seconds
 # Per-system runners
 # ---------------------------------------------------------------------------
 
-def run_metric_system(question: str, chunks: list, embeddings) -> dict:
+def run_metric_system(question: str, chunks: list, vectorizer, matrix) -> dict:
     """Run the full metric-aware pipeline on one question."""
     record: dict = {
         "system": "metric_aware",
@@ -56,11 +56,12 @@ def run_metric_system(question: str, chunks: list, embeddings) -> dict:
             return record
 
         metric_info = get_metric_info(metric_key)
-        query = (
-            f"{question} {metric_info['name']} "
-            f"{' '.join(metric_info['required_fields'])}"
-        )
-        evidence = retrieve(query, chunks, embeddings, top_k=6)
+        query = " ".join([
+            question,
+            metric_info["name"],
+            " ".join(metric_info.get("search_terms", [])),
+        ])
+        evidence = retrieve(query, chunks, vectorizer, matrix, top_k=6)
 
         extracted = extract_values(metric_key, metric_info["required_fields"], evidence)
         record["extracted_values"] = str(extracted)
@@ -114,9 +115,9 @@ def main() -> None:
         print(f"[eval] Test CSV not found at '{TEST_CSV}'. Exiting.")
         return
 
-    # Load the embedding index once (expensive, cache is reused)
-    print("[eval] Loading embedding index...")
-    chunks, embeddings = build_or_load_index()
+    # Build or load TF-IDF index (fast; cache is reused on subsequent runs)
+    print("[eval] Loading TF-IDF index...")
+    chunks, vectorizer, matrix = build_or_load_index()
 
     with open(TEST_CSV, newline="", encoding="utf-8") as f:
         questions = list(csv.DictReader(f))
@@ -133,7 +134,7 @@ def main() -> None:
         print(f"[{i}/{len(questions)}] {question}")
 
         # Metric-aware
-        m_record = run_metric_system(question, chunks, embeddings)
+        m_record = run_metric_system(question, chunks, vectorizer, matrix)
         m_record["expected_metric"] = expected_metric
         m_record["expected_value"] = expected_value
         all_records.append(m_record)

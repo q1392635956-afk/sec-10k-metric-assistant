@@ -39,11 +39,12 @@ st.caption(
 # ---------------------------------------------------------------------------
 # Pre-flight checks
 # ---------------------------------------------------------------------------
-if not os.environ.get("OPENAI_API_KEY"):
+if not os.environ.get("GEMINI_API_KEY"):
     st.error(
-        "**OPENAI_API_KEY is not set.**\n\n"
-        "Copy `.env.example` to `.env`, add your key, then restart the app:\n"
-        "```\nstreamlit run app.py\n```"
+        "**GEMINI_API_KEY is not set.**\n\n"
+        "Copy `.env.example` to `.env`, add your Google AI Studio key, then restart:\n"
+        "```\nstreamlit run app.py\n```\n\n"
+        "Get a free key at https://aistudio.google.com/app/apikey"
     )
     st.stop()
 
@@ -159,14 +160,15 @@ if run_button and question:
             # Step 2: Load index and retrieve
             with st.status("Step 2 — Retrieving evidence from 10-K...", expanded=True) as status:
                 try:
-                    chunks, embeddings = build_or_load_index()
+                    chunks, vectorizer, matrix = build_or_load_index()
                     metric_info = get_metric_info(metric_key)
-                    # Augment query with field names for better recall
-                    retrieval_query = (
-                        f"{question} {metric_info['name']} "
-                        f"{' '.join(metric_info['required_fields'])}"
-                    )
-                    evidence = retrieve(retrieval_query, chunks, embeddings, top_k=6)
+                    # Augment query with document-native search terms for better TF-IDF recall
+                    retrieval_query = " ".join([
+                        question,
+                        metric_info["name"],
+                        " ".join(metric_info.get("search_terms", [])),
+                    ])
+                    evidence = retrieve(retrieval_query, chunks, vectorizer, matrix, top_k=6)
                     st.write(f"Retrieved **{len(evidence)}** evidence chunks.")
                     status.update(label="Step 2 — Evidence retrieved", state="complete")
                 except FileNotFoundError as e:

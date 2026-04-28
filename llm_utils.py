@@ -1,10 +1,10 @@
 """
 llm_utils.py
 ------------
-All LLM API calls are here, kept separate from business logic:
+All LLM API calls using Google Gemini via the google-genai SDK:
 
   classify_metric()  — routes a user question to a metric key
-  extract_values()   — pulls required numbers out of evidence text
+  extract_values()   — pulls required numbers out of evidence text as JSON
   format_answer()    — writes a cited explanation around a computed result
 
 The actual math lives in metric_engine.py, not here.
@@ -14,10 +14,10 @@ from __future__ import annotations
 import json
 import os
 
-from openai import OpenAI
+from google import genai
+from google.genai import types
 
-# Keep model name configurable via env var; default to a cheap but capable model.
-MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+MODEL = os.environ.get("GEMINI_CHAT_MODEL", "gemini-2.5-flash")
 
 SUPPORTED_METRICS = [
     "gross_margin",
@@ -28,14 +28,14 @@ SUPPORTED_METRICS = [
 ]
 
 
-def _get_client() -> OpenAI:
-    api_key = os.environ.get("OPENAI_API_KEY")
+def _get_client() -> genai.Client:
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise ValueError(
-            "OPENAI_API_KEY environment variable is not set. "
-            "Copy .env.example to .env and add your key."
+            "GEMINI_API_KEY environment variable is not set. "
+            "Copy .env.example to .env and add your Google AI Studio key."
         )
-    return OpenAI(api_key=api_key)
+    return genai.Client(api_key=api_key)
 
 
 # ---------------------------------------------------------------------------
@@ -62,13 +62,15 @@ def classify_metric(question: str) -> str | None:
         f"Question: {question}"
     )
 
-    response = client.chat.completions.create(
+    response = client.models.generate_content(
         model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0,
-        max_tokens=20,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0,
+            max_output_tokens=20,
+        ),
     )
-    result = response.choices[0].message.content.strip().lower()
+    result = response.text.strip().lower()
     return result if result in SUPPORTED_METRICS else None
 
 
@@ -93,14 +95,14 @@ def extract_values(
 
     # Field-specific hints so the model knows what to look for
     field_hints = {
-        "revenue": "Total net sales or total revenue for FY2025",
-        "gross_profit": "Gross margin / gross profit line for FY2025",
-        "operating_income": "Operating income or income from operations for FY2025",
+        "revenue": "Total net sales for FY2025 (fiscal year ended September 27, 2025)",
+        "gross_profit": "Gross margin dollar amount for FY2025",
+        "operating_income": "Operating income for FY2025",
         "net_income": "Net income for FY2025",
-        "current_assets": "Total current assets from the balance sheet (latest fiscal year end)",
-        "current_liabilities": "Total current liabilities from the balance sheet (latest fiscal year end)",
-        "rd_current": "Research and development expense for FY2025 (the most recent year)",
-        "rd_prior": "Research and development expense for FY2024 (the prior year)",
+        "current_assets": "Total current assets from the balance sheet as of September 27, 2025",
+        "current_liabilities": "Total current liabilities from the balance sheet as of September 27, 2025",
+        "rd_current": "Research and development expense for FY2025 (most recent year)",
+        "rd_prior": "Research and development expense for FY2024 (prior year, ended September 28, 2024)",
     }
     hints = "\n".join(
         f"  - {f}: {field_hints.get(f, f)}" for f in required_fields
@@ -113,28 +115,29 @@ def extract_values(
         "Field descriptions:\n"
         f"{hints}\n\n"
         "Rules:\n"
-        "- Return values in millions of USD (e.g. 391035.0 for $391,035 million).\n"
-        "- Do NOT include units, commas, or dollar signs in the JSON values.\n"
+        "- All values are in millions of USD (e.g. 391035.0 for $391,035 million).\n"
+        "- Return numbers only — no units, commas, or dollar signs.\n"
         "- If a value cannot be found in the evidence, use null.\n"
-        "- Use the most recent fiscal year values where ambiguous.\n\n"
+        "- Use the most recent fiscal year (FY2025) values unless the field says 'prior'.\n\n"
         "Return ONLY a valid JSON object with the required field names as keys.\n"
         'Example: {"revenue": 391035.0, "gross_profit": 180683.0}\n\n'
         "Evidence from the 10-K:\n"
         f"{evidence_text}"
     )
 
-    response = client.chat.completions.create(
+    response = client.models.generate_content(
         model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0,
-        max_tokens=300,
-        response_format={"type": "json_object"},
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0,
+        ),
     )
 
     try:
-        return json.loads(response.choices[0].message.content)
-    except json.JSONDecodeError:
-        # Return all nulls so the caller can handle gracefully
+        return json.loads(response.text)
+    except (json.JSONDecodeError, AttributeError):
+        # Return all nulls so the caller can surface a clean error
         return {f: None for f in required_fields}
 
 
@@ -154,7 +157,6 @@ def format_answer(
     """Generate a concise, cited explanation of the computed metric result."""
     client = _get_client()
 
-    # Format extracted values for the prompt (skip nulls)
     values_str = ", ".join(
         f"{k} = {v:,.2f}" for k, v in extracted_values.items() if v is not None
     )
@@ -174,10 +176,12 @@ def format_answer(
         "Be professional and concise. Do not invent numbers beyond what is provided above."
     )
 
-    response = client.chat.completions.create(
+    response = client.models.generate_content(
         model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=350,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.3,
+            max_output_tokens=400,
+        ),
     )
-    return response.choices[0].message.content.strip()
+    return response.text.strip()
