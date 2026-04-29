@@ -346,6 +346,12 @@ The app retrieves relevant passages from the FY2025 10-K, extracts gross profit 
 
 Without retrieval, the baseline LLM does not have access to the FY2025 10-K and either declines or returns an estimate based on stale training data.
 
+**Full evaluation run — console summary:**
+
+![Evaluation summary](screenshots/evaluation_summary.png)
+
+Output of `python run_evaluation.py` across all 10 test questions: 8/8 classification accuracy on supported metrics, 2/2 unsupported questions correctly declined, 8/8 computation success rate, and 8/8 numeric accuracy within the 0.5% tolerance.
+
 ---
 
 ## 12. File Structure
@@ -380,7 +386,8 @@ sec-10k-metric-assistant/
 `- screenshots/
     |- README.md                          # Screenshot guidance
     |- metric_aware_gross_margin.png      # App computing gross margin end-to-end
-    `- baseline_gross_margin_failure.png  # Baseline failing without retrieval
+    |- baseline_gross_margin_failure.png  # Baseline failing without retrieval
+    `- evaluation_summary.png             # Full 10-question evaluation console output
 ```
 
 ---
