@@ -334,7 +334,17 @@ Console output shows per-step progress for each question. Results are saved to `
 
 ### Screenshots
 
-Add screenshots of the Streamlit app and evaluation output under `screenshots/` if available. See `screenshots/README.md` for guidance.
+**Metric-aware system — gross margin computed successfully:**
+
+![Metric-aware gross margin](screenshots/metric_aware_gross_margin.png)
+
+The app retrieves relevant passages from the FY2025 10-K, extracts gross profit ($195,201M) and net sales ($416,161M) via Gemini, and computes gross margin as 46.91% using Python.
+
+**Baseline — gross margin query fails to ground in FY2025 filing:**
+
+![Baseline gross margin failure](screenshots/baseline_gross_margin_failure.png)
+
+Without retrieval, the baseline LLM does not have access to the FY2025 10-K and either declines or returns an estimate based on stale training data.
 
 ---
 
@@ -368,7 +378,9 @@ sec-10k-metric-assistant/
 |   `- evaluation_summary.md  # Fill in with qualitative analysis after running
 |
 `- screenshots/
-    `- README.md           # Add app screenshots here for submission
+    |- README.md                          # Screenshot guidance
+    |- metric_aware_gross_margin.png      # App computing gross margin end-to-end
+    `- baseline_gross_margin_failure.png  # Baseline failing without retrieval
 ```
 
 ---
